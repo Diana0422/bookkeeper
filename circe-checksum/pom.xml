@@ -113,6 +113,32 @@
   </build>
 
   <profiles>
+    <!-- my profile -->
+    <profile>
+      <id>local-config</id>
+      <activation>
+        <os>
+          <family>Windows</family>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.maven-nar</groupId>
+            <artifactId>nar-maven-plugin</artifactId>
+            <version>${nar-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <aol>x86-Windows-g++</aol>
+              <linker>
+                <name>g++</name>
+              </linker>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <profile>
       <!-- from JDK10 javah command is not available
            see http://openjdk.java.net/jeps/313
