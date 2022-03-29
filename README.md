@@ -49,8 +49,6 @@ We feel that a welcoming open community is important and welcome contributions.
 
 1. See [Developer Setup](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Developer+Setup) to get your local environment setup.
 
-:P
-
 2. Take a look at our open issues: [JIRA Issues](https://issues.apache.org/jira/browse/BOOKKEEPER) [Github Issues](https://github.com/apache/bookkeeper/issues).
 
 3. Review our [coding style](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Coding+Guide) and follow our [pull requests](https://github.com/apache/bookkeeper/pulls) to learn about our conventions.
