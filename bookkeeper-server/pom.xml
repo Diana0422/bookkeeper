@@ -29,7 +29,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <argLine>-javaagent:target/dependency/ba-dua-agent-rt-0.6.0-all.jar -Doutput.file=target/badua.ser</argLine>
+<!--    <argLine>-javaagent:target/dependency/ba-dua-agent-rt-0.6.0-all.jar -Doutput.file=target/badua.ser</argLine>-->
     <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
@@ -269,6 +269,14 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -460,18 +468,12 @@
               <verbose>true</verbose>
               <targetClasses>
                 <!-- classes to test  -->
-<!--                <param>org.apache.bookkeeper.client.BookKeeper</param>&lt;!&ndash; class 1 to test &ndash;&gt;-->
-<!--                <param>org.apache.bookkeeper.net.NetworkTopologyImpl</param>&lt;!&ndash; class 2 to test &ndash;&gt;-->
+<!--                <param> class 1 to test </param>-->
+<!--                <param> class 2 to test </param> -->
               </targetClasses>
               <targetTests>
                 <!-- test implementations -->
-<!--                <param>org.apache.bookkeeper.client.BookKeeperCreateLedgerTest</param>-->
-<!--                <param>org.apache.bookkeeper.client.BookKeeperDeleteLedgerTest</param>-->
-<!--                <param>org.apache.bookkeeper.client.BookKeeperOtherCreateLedgerTest</param>-->
-<!--                <param>org.apache.bookkeeper.client.BookKeeperOpenLedgerTest</param>-->
-<!--                <param>org.apache.bookkeeper.net.NetworkTopologyImplTest</param>-->
-<!--                <param>org.apache.bookkeeper.net.NetworkTopologyImplIsOnSameRackTest</param>-->
-<!--                <param>org.apache.bookkeeper.net.NetworkTopologyImplGetDistanceTest</param>-->
+<!--                <param> test class 1</param>-->
               </targetTests>
             </configuration>
             <executions>
