@@ -38,9 +38,15 @@ public abstract class BookKeeperTest {
     @Mock
     protected CompletableFuture<Versioned<LedgerMetadata>> whenCompleteCloseWrong;
     @Mock
+    protected CompletableFuture<Void> whenCompleteRemoveOk;
+    @Mock
+    protected CompletableFuture<Void> whenCompleteRemoveWrong;
+    @Mock
     private Versioned<LedgerMetadata> versioned;
     @Mock
     protected LedgerMetadata metadata;
+    @Mock
+    private Void voidDelete;
     private OrderedExecutor executor;
     @Spy
     protected BookKeeper bk;
@@ -115,6 +121,16 @@ public abstract class BookKeeperTest {
             ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
             return null;
         }).when(whenCompleteCloseWrong).whenComplete(any(BiConsumer.class));
+
+        // delete ledger
+        doAnswer( invocation -> {
+            ((BiConsumer<Void, Throwable>) invocation.getArguments()[0]).accept(voidDelete, null);
+            return null;
+        }).when(whenCompleteRemoveOk).whenCompleteAsync(any(BiConsumer.class), any());
+        doAnswer( invocation -> {
+            ((BiConsumer<Void, Throwable>) invocation.getArguments()[0]).accept(voidDelete, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
+            return null;
+        }).when(whenCompleteRemoveWrong).whenCompleteAsync(any(BiConsumer.class), any());
     }
 
 
