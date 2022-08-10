@@ -1,6 +1,7 @@
 package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieId;
@@ -13,10 +14,7 @@ import org.junit.Before;
 import org.mockito.*;
 import org.mockito.invocation.InvocationOnMock;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -37,6 +35,7 @@ public abstract class BookKeeperTest {
     private Versioned<LedgerMetadata> versioned;
     @Mock
     private LedgerMetadata metadata;
+    private OrderedExecutor executor;
     @Spy
     protected BookKeeper bk;
 
@@ -53,17 +52,12 @@ public abstract class BookKeeperTest {
 
     public BookKeeperTest() {
         MockitoAnnotations.initMocks(this);
+        executor = OrderedExecutor.newBuilder().build();
     }
 
     @Before
     public void setUp() throws Exception {
         System.out.println("Expected:" + expected);
-//        if (expected != null) {
-//            // we expect a success
-//            mockedStatics.put(SyncCallbackUtils.class.getName(), mockStatic(SyncCallbackUtils.class));
-//            mockedStatics.get(SyncCallbackUtils.class.getName()).when(() -> SyncCallbackUtils.waitForResult(any()))
-//                    .thenReturn(null);
-//        }
         doAnswer(invocation -> {
             ((BookkeeperInternalCallbacks.GenericCallback<Long>) invocation.getArguments()[0]).operationComplete(BKException.Code.OK, new Long(4113));
             return null;
@@ -91,12 +85,21 @@ public abstract class BookKeeperTest {
             ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versioned, null);
             return null;
         }).when(whenComplete).whenComplete(any(BiConsumer.class));
-    }
 
-//    @After
-//    public void tearDown() {
-//        if (expected != null) mockedStatics.get(SyncCallbackUtils.class.getName()).close();
-//    }
+        // to close the ledger
+        when(metadata.getAllEnsembles()).thenAnswer(invocationOnMock -> {
+            TreeMap<Long, List<BookieId>> tree = new TreeMap<>();
+            ArrayList<BookieId> bookies = new ArrayList<>();
+            for (int i = 0; i < ensSize; i++) {
+                BookieId bookie = BookieId.parse("BookieNo" + i);
+                bookies.add(bookie);
+            }
+            tree.putIfAbsent(1L, bookies);
+            return tree;
+        });
+        when(bk.getClientCtx().getMainWorkerPool()).thenReturn(executor);
+        when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(whenComplete);
+    }
 
 
     protected void configureQuorum(int ensSize, int writeQuorumSize, int ackQuorumSize) {
