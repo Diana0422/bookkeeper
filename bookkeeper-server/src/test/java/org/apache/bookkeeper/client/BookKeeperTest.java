@@ -5,14 +5,16 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.util.LocalBookKeeper;
 import org.apache.bookkeeper.utils.ExpectedLedger;
 import org.apache.bookkeeper.utils.ResultType;
+import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.After;
 import org.junit.Before;
 import org.mockito.*;
-import org.mockito.invocation.InvocationOnMock;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -28,13 +30,17 @@ public abstract class BookKeeperTest {
     @Mock
     private LedgerIdGenerator ledgerIdGenerator;
     @Mock
-    private LedgerManager ledgerManager;
+    protected LedgerManager ledgerManager;
     @Mock
     private CompletableFuture<Versioned<LedgerMetadata>> whenComplete;
     @Mock
+    protected CompletableFuture<Versioned<LedgerMetadata>> whenCompleteCloseOk;
+    @Mock
+    protected CompletableFuture<Versioned<LedgerMetadata>> whenCompleteCloseWrong;
+    @Mock
     private Versioned<LedgerMetadata> versioned;
     @Mock
-    private LedgerMetadata metadata;
+    protected LedgerMetadata metadata;
     private OrderedExecutor executor;
     @Spy
     protected BookKeeper bk;
@@ -61,22 +67,20 @@ public abstract class BookKeeperTest {
         doAnswer(invocation -> {
             ((BookkeeperInternalCallbacks.GenericCallback<Long>) invocation.getArguments()[0]).operationComplete(BKException.Code.OK, new Long(4113));
             return null;
-        })
-                .when(ledgerIdGenerator).generateLedgerId(any(BookkeeperInternalCallbacks.GenericCallback.class));
+        }).when(ledgerIdGenerator).generateLedgerId(any(BookkeeperInternalCallbacks.GenericCallback.class));
+
         // mocking dependencies to execute ledger creation
         when(bk.getBookieWatcher()).thenReturn(bookieWatcher);
-        if (ensSize > 0) {
-            // activate this mocked method only if there is >0 bookies requested (1)
-            when(bookieWatcher.newEnsemble(anyInt(), anyInt(), anyInt(), any()))
-                    .thenAnswer(invocationOnMock -> {
-                        ArrayList<BookieId> bookies = new ArrayList<>();
-                        for (int i = 0; i < ensSize; i++) {
-                            BookieId bookie = BookieId.parse("BookieNo" + i);
-                            bookies.add(bookie);
-                        }
-                        return bookies;
-                    });
-        }
+        when(bookieWatcher.newEnsemble(anyInt(), anyInt(), anyInt(), any()))
+                .thenAnswer(invocationOnMock -> {
+                    ArrayList<BookieId> bookies = new ArrayList<>();
+                    for (int i = 0; i < ensSize; i++) {
+                        BookieId bookie = BookieId.parse("BookieNo" + i);
+                        bookies.add(bookie);
+                    }
+                    return bookies;
+                });
+
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(ledgerManager.createLedgerMetadata(anyLong(), any(LedgerMetadata.class))).thenReturn(whenComplete);
@@ -98,7 +102,19 @@ public abstract class BookKeeperTest {
             return tree;
         });
         when(bk.getClientCtx().getMainWorkerPool()).thenReturn(executor);
-        when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(whenComplete);
+        LedgerMetadata meta = LedgerMetadataBuilder.from(metadata)
+                .withClosedState().withLastEntryId(-1)
+                .withLength(0).build();
+        Versioned<LedgerMetadata> versionedMeta = new Versioned<>(meta, Version.ANY);
+        when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(whenCompleteCloseOk);
+        doAnswer( invocation -> {
+            ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, null);
+            return null;
+        }).when(whenCompleteCloseOk).whenComplete(any(BiConsumer.class));
+        doAnswer( invocation -> {
+            ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
+            return null;
+        }).when(whenCompleteCloseWrong).whenComplete(any(BiConsumer.class));
     }
 
 
@@ -127,6 +143,10 @@ public abstract class BookKeeperTest {
                 break;
             case UNEXPECTED_ERR:
                 this.expectedError = new BKException.BKUnexpectedConditionException();
+                break;
+            case BK_ERR:
+                this.expectedError = new BKException.BKNoSuchLedgerExistsOnMetadataServerException();
+                break;
             default:
                 break;
         }

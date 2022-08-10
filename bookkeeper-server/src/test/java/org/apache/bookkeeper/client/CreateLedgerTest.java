@@ -58,14 +58,14 @@ public class CreateLedgerTest extends BookKeeperTest {
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
                 // {ensSize, Qw, Qa, DigestType, Passwd, ExpectedResult}
-                {0, 0, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK}, // fixme this should not work!
-                {0, 0, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, 0, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR}, // FIXME THIS TEST FAILS because negative values not handled
-                {0, 1, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {0, 1, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, 1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, -1, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR}, // FIXME THIS TEST FAILS because negative values not handled
-                {0, -1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {0, 0, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK}, // fixme this should not work!
+//                {0, 0, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+////                {0, 0, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR}, // FIXME THIS TEST FAILS because negative values not handled
+//                {0, 1, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {0, 1, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+////                {0, 1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+////                {0, -1, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR}, // FIXME THIS TEST FAILS because negative values not handled
+//                {0, -1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
 //                {0, -1, -2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR}, // FIXME THIS TEST FAILS because negative values not handled
                 {1, 1, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
                 {1, 1, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
