@@ -6,5 +6,15 @@ public enum ParamType {
     EMPTY,
     NULL,
     CORRECT,
-    INCORRECT
+    INCORRECT;
+
+    public enum LedgerMetaType {
+        ENS_NEG,
+        ENS_ZERO,
+        ENS_POS,
+        PASSDIGEST_VALID,
+        PASSDIGEST_INVALID,
+        STATE_OPEN,
+        STATE_CLOSED
+    }
 }

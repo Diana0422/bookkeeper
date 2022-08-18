@@ -468,12 +468,14 @@
               <verbose>true</verbose>
               <targetClasses>
                 <!-- classes to test  -->
-<!--                <param> class 1 to test </param>-->
-<!--                <param> class 2 to test </param> -->
+                <param>org.apache.bookkeeper.client.BookKeeper</param>
+<!--                <param>org.apache.bookkeeper.bookie.Bookie</param> -->
               </targetClasses>
               <targetTests>
                 <!-- test implementations -->
-<!--                <param> test class 1</param>-->
+                <param>org.apache.bookkeeper.client.CreateLedgerTest</param>
+                <param>org.apache.bookkeeper.client.OpenLedgerTest</param>
+                <param>org.apache.bookkeeper.client.DeleteLedgerTest</param>
               </targetTests>
             </configuration>
             <executions>
