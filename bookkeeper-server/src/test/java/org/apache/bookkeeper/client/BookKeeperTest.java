@@ -77,15 +77,14 @@ public abstract class BookKeeperTest {
 
         // mocking dependencies to execute ledger creation
         when(bk.getBookieWatcher()).thenReturn(bookieWatcher);
-        when(bookieWatcher.newEnsemble(anyInt(), anyInt(), anyInt(), any()))
-                .thenAnswer(invocationOnMock -> {
-                    ArrayList<BookieId> bookies = new ArrayList<>();
-                    for (int i = 0; i < ensSize; i++) {
-                        BookieId bookie = BookieId.parse("BookieNo" + i);
-                        bookies.add(bookie);
-                    }
-                    return bookies;
-                });
+        doAnswer(invocationOnMock -> {
+            ArrayList<BookieId> bookies = new ArrayList<>();
+            for (int i = 0; i < ensSize; i++) {
+                BookieId bookie = BookieId.parse("BookieNo" + i);
+                bookies.add(bookie);
+            }
+            return bookies;
+        }).when(bookieWatcher).newEnsemble(anyInt(), anyInt(), anyInt(), any());
 
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
@@ -104,23 +103,26 @@ public abstract class BookKeeperTest {
                 BookieId bookie = BookieId.parse("BookieNo" + i);
                 bookies.add(bookie);
             }
-            tree.putIfAbsent(1L, bookies);
+            // add ensemble only id ensSize > 0
+            if (ensSize > 0) tree.putIfAbsent(1L, bookies);
             return tree;
         });
         when(bk.getClientCtx().getMainWorkerPool()).thenReturn(executor);
-        LedgerMetadata meta = LedgerMetadataBuilder.from(metadata)
-                .withClosedState().withLastEntryId(-1)
-                .withLength(0).build();
-        Versioned<LedgerMetadata> versionedMeta = new Versioned<>(meta, Version.ANY);
-        when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(whenCompleteCloseOk);
-        doAnswer( invocation -> {
-            ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, null);
-            return null;
-        }).when(whenCompleteCloseOk).whenComplete(any(BiConsumer.class));
-        doAnswer( invocation -> {
-            ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
-            return null;
-        }).when(whenCompleteCloseWrong).whenComplete(any(BiConsumer.class));
+        if (ensSize > 0) {
+            LedgerMetadata meta = LedgerMetadataBuilder.from(metadata)
+                    .withClosedState().withLastEntryId(-1)
+                    .withLength(0).build();
+            Versioned<LedgerMetadata> versionedMeta = new Versioned<>(meta, Version.ANY);
+            when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(whenCompleteCloseOk);
+            doAnswer( invocation -> {
+                ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, null);
+                return null;
+            }).when(whenCompleteCloseOk).whenComplete(any(BiConsumer.class));
+            doAnswer( invocation -> {
+                ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
+                return null;
+            }).when(whenCompleteCloseWrong).whenComplete(any(BiConsumer.class));
+        }
 
         // delete ledger
         doAnswer( invocation -> {
