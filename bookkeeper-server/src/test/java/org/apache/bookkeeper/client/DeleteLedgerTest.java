@@ -33,7 +33,7 @@ public class DeleteLedgerTest extends BookKeeperTest {
         this.writeQuorumSize = 1;
         this.ackQuorumSize = 1;
         this.digestType = BookKeeper.DigestType.DUMMY;
-        this.passwd = "diana".getBytes(StandardCharsets.UTF_8);
+        this.passwd = "password".getBytes(StandardCharsets.UTF_8);
 
         configureResult(resultType);
     }
@@ -68,6 +68,7 @@ public class DeleteLedgerTest extends BookKeeperTest {
                 bk.deleteLedger(ledgerId);
             } catch (Exception e) {
                 e.printStackTrace();
+                assertEquals(expectedError.getClass(), e.getClass());
             }
         } else {
             // ledger not exists
