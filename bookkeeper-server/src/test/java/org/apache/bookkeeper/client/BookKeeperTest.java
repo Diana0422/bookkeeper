@@ -110,8 +110,15 @@ public abstract class BookKeeperTest {
         when(bk.getClientCtx().getMainWorkerPool()).thenReturn(executor);
         if (ensSize > 0) {
             LedgerMetadata meta = LedgerMetadataBuilder.from(metadata)
-                    .withClosedState().withLastEntryId(-1)
-                    .withLength(0).build();
+                    .withPassword(passwd)
+                    .withDigestType(digestType.toApiDigestType())
+                    .withClosedState()
+                    .withLastEntryId(-1)
+                    .withLength(0)
+                    .build();
+//            LedgerMetadata meta = LedgerMetadataBuilder.from(metadata)
+//                    .withClosedState().withLastEntryId(-1)
+//                    .withLength(0).build();
             Versioned<LedgerMetadata> versionedMeta = new Versioned<>(meta, Version.ANY);
             when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(whenCompleteCloseOk);
             doAnswer( invocation -> {

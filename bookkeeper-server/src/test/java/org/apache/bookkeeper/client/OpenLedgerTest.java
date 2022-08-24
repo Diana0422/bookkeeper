@@ -46,11 +46,11 @@ public class OpenLedgerTest extends BookKeeperTest {
                 this.passwd = pass.getBytes(StandardCharsets.UTF_8);
                 break;
             case INCORRECT:
-                pass = "nadia";
+                pass = "NOTPASSWORD";
                 this.passwd = pass.getBytes(StandardCharsets.UTF_8);
                 break;
             case CORRECT:
-                pass = "diana";
+                pass = "PASSWORD";
                 this.passwd = pass.getBytes(StandardCharsets.UTF_8);
                 break;
             case NULL:
@@ -64,14 +64,15 @@ public class OpenLedgerTest extends BookKeeperTest {
     @Parameterized.Parameters
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
+                // {lId, DigestType, passwd, result}
+                {4113L, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.OK},
                 {2001L, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.BK_ERR},
-                {4113L, BookKeeper.DigestType.DUMMY, ParamType.EMPTY, ResultType.NULL_PTR_ERR},
-                {4113L, BookKeeper.DigestType.DUMMY, ParamType.INCORRECT, ResultType.ILLEGAL_ARG_ERR},
-                {4113L, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.OK},
                 {4113L, BookKeeper.DigestType.CRC32, ParamType.CORRECT, ResultType.OK},
+                {4113L, BookKeeper.DigestType.MAC, ParamType.CORRECT, ResultType.OK},
                 {4113L, BookKeeper.DigestType.CRC32C, ParamType.CORRECT, ResultType.OK},
-                {4113L, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.OK},
-                {-1, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.BK_ERR}
+                {4113L, BookKeeper.DigestType.DUMMY, ParamType.EMPTY, ResultType.OK},
+                {4113L, BookKeeper.DigestType.DUMMY, ParamType.INCORRECT, ResultType.ILLEGAL_ARG_ERR},
+//                {-1, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.BK_ERR}
         });
     }
 
@@ -105,14 +106,16 @@ public class OpenLedgerTest extends BookKeeperTest {
         if (handle == null){
             // ledger does not exists
             try {
-                bk.openLedger(ledgerId, digestType, passwd);
+                handle = bk.openLedger(ledgerId, digestType, passwd);
+                assertNotNull(handle);
             }catch (BKException | InterruptedException e){
                 assertEquals(expectedError.getClass(), e.getClass());
             }
         } else {
             // ledger exists and was previously closed
             try {
-                bk.openLedger(ledgerId, digestType, passwd);
+                handle = bk.openLedger(ledgerId, digestType, passwd);
+                assertNotNull(handle);
             } catch (BKException | InterruptedException e) {
                 e.printStackTrace();
             }
