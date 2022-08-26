@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.awt.print.Book;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,19 +19,29 @@ import static org.junit.Assert.*;
 public class CreateLedgerTest extends BookKeeperTest {
 
     private LedgerHandle ledger;
+    private boolean clientClosed;
 
-    public CreateLedgerTest(int ensSize, int writeQuorumSize, int ackQuorumSize,
+    public CreateLedgerTest(boolean clientClosed, int ensSize, int writeQuorumSize, int ackQuorumSize,
                             BookKeeper.DigestType digestType, ParamType passwdType, ResultType expectedType) {
-        configure(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwdType, expectedType);
+        configure(clientClosed, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwdType, expectedType);
 
     }
 
-    private void configure(int ensSize, int writeQuorumSize, int ackQuorumSize,
+    private void configure(boolean clientClosed, int ensSize, int writeQuorumSize, int ackQuorumSize,
                            BookKeeper.DigestType digestType, ParamType passwdType, ResultType expectedType) {
+        this.clientClosed = clientClosed;
         configureQuorum(ensSize, writeQuorumSize, ackQuorumSize);
         configureDigestType(digestType);
         configureCreationPasswd(passwdType);
         configureResult(expectedType);
+    }
+
+    @Override
+    protected void configureResult(ResultType resultType) {
+        super.configureResult(resultType);
+        if (resultType == ResultType.BK_ERR) {
+            this.expectedError = new BKException.BKClientClosedException();
+        }
     }
 
     protected void configureCreationPasswd(ParamType passwdType) {
@@ -57,47 +66,55 @@ public class CreateLedgerTest extends BookKeeperTest {
     @Parameterized.Parameters
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                // {ensSize, Qw, Qa, DigestType, Passwd, ExpectedResult}
+                // {clientClosed, ensSize, Qw, Qa, DigestType, Passwd, ExpectedResult}
+                /* First Iteration: category partition */
                 // fixme: ensSize = 0 is not handled by the method!
-//                {0, 0, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, 0, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, 0, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, 1, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, 1, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, 1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, -1, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, -1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-//                {0, -1, -2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {1, 1, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
-                {1, 1, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {1, 1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
-                {1, 2, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {1, 2, 3, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {1, 2, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {1, 0, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
-                {1, 0, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, 0, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, 0, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, 0, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, 1, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, 1, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, 1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, -1, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, -1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 0, -1, -2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 1, 1, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+                {false, 1, 1, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 1, 1, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+                {false, 1, 2, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 1, 2, 3, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 1, 2, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 1, 0, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+                {false, 1, 0, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
                 // fixme: negative values for Qa non handled by the method!
-//                {1, 0, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
-                {4, 4, 4, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
-                {4, 4, 5, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {4, 4, 3, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
-                {4, 5, 5, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {4, 5, 6, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {4, 5, 4, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {4, 3, 3, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
-                {4, 3, 4, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
-                {4, 3, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
-                {4, 3, 2, BookKeeper.DigestType.MAC, ParamType.VALID, ResultType.OK},
-                {4, 3, 2, BookKeeper.DigestType.CRC32, ParamType.VALID, ResultType.OK},
-                {4, 3, 2, BookKeeper.DigestType.CRC32C, ParamType.VALID, ResultType.OK},
-                {4, 3, 2, BookKeeper.DigestType.DUMMY, ParamType.EMPTY, ResultType.OK},
+//                {false, 1, 0, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+                {false, 4, 4, 4, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+                {false, 4, 4, 5, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 4, 4, 3, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+                {false, 4, 5, 5, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 4, 5, 6, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 4, 5, 4, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 4, 3, 3, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+                {false, 4, 3, 4, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
+                {false, 4, 3, 2, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+                {false, 4, 3, 2, BookKeeper.DigestType.MAC, ParamType.VALID, ResultType.OK},
+                {false, 4, 3, 2, BookKeeper.DigestType.CRC32, ParamType.VALID, ResultType.OK},
+                {false, 4, 3, 2, BookKeeper.DigestType.CRC32C, ParamType.VALID, ResultType.OK},
+                {false, 4, 3, 2, BookKeeper.DigestType.DUMMY, ParamType.EMPTY, ResultType.OK},
                 // fixme: null password not handled by the method!
-//                {4, 3, 2, BookKeeper.DigestType.DUMMY, ParamType.NULL, ResultType.ILLEGAL_ARG_ERR},
+//                {false, 4, 3, 2, BookKeeper.DigestType.DUMMY, ParamType.NULL, ResultType.ILLEGAL_ARG_ERR},
+
+                /* Second iteration: increment statement coverage */
+                {true, 4, 3, 2, BookKeeper.DigestType.MAC, ParamType.VALID, ResultType.BK_ERR}
         });
     }
 
     @Test
-    public void createTest() {
+    public void createTest() throws BKException, InterruptedException {
+        if (clientClosed) {
+            // close the client
+            bk.close();
+        }
         try {
             ledger = bk.createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd);
             assertNotNull(ledger);

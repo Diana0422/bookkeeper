@@ -22,12 +22,14 @@ import static org.mockito.Mockito.when;
 public class DeleteLedgerTest extends BookKeeperTest {
 
     private long ledgerId;
+    private boolean closedClient;
 
-    public DeleteLedgerTest(long ledgerId, ResultType resultType) {
-        configure(ledgerId, resultType);
+    public DeleteLedgerTest(boolean closedClient, long ledgerId, ResultType resultType) {
+        configure(closedClient, ledgerId, resultType);
     }
 
-    private void configure(long ledgerId, ResultType resultType) {
+    private void configure(boolean closedClient, long ledgerId, ResultType resultType) {
+        this.closedClient = closedClient;
         this.ledgerId = ledgerId;
         this.ensSize = 1;
         this.writeQuorumSize = 1;
@@ -36,6 +38,14 @@ public class DeleteLedgerTest extends BookKeeperTest {
         this.passwd = "password".getBytes(StandardCharsets.UTF_8);
 
         configureResult(resultType);
+    }
+
+    @Override
+    protected void configureResult(ResultType resultType) {
+        super.configureResult(resultType);
+        if (resultType == ResultType.BK_ERR && closedClient) {
+            this.expectedError = new BKException.BKClientClosedException();
+        }
     }
 
     @Before
@@ -48,7 +58,7 @@ public class DeleteLedgerTest extends BookKeeperTest {
     }
 
     @Test
-    public void deleteTest() {
+    public void deleteTest() throws BKException, InterruptedException {
         LedgerHandle handle = null;
         if (ledgerId == 4113L) {
             try {
@@ -59,6 +69,11 @@ public class DeleteLedgerTest extends BookKeeperTest {
             } catch (InterruptedException | BKException e) {
                 e.printStackTrace();
             }
+        }
+
+        if (closedClient) {
+            /* 2nd Iteration: increment statement and condition coverage */
+            bk.close();
         }
 
         if (handle != null) {
@@ -85,9 +100,14 @@ public class DeleteLedgerTest extends BookKeeperTest {
     @Parameterized.Parameters
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {4113L, ResultType.OK},
-                {0, ResultType.BK_ERR},
-                {-1, ResultType.BK_ERR}
+                // {clientClosed, ledgerId, resultType}
+                /* 1st Iteration: category partition */
+                {false, 4113L, ResultType.OK},
+                {false, 0, ResultType.BK_ERR},
+                {false, -1, ResultType.BK_ERR},
+
+                /* 2nd Iteration: increment statement and condition coverage */
+                {true, 4113L, ResultType.BK_ERR}
         });
     }
 }

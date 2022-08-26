@@ -25,31 +25,21 @@ import static org.mockito.Mockito.*;
 
 public abstract class BookKeeperTest {
 
-    @Mock
-    private BookieWatcher bookieWatcher;
-    @Mock
-    private LedgerIdGenerator ledgerIdGenerator;
-    @Mock
-    protected LedgerManager ledgerManager;
-    @Mock
-    private CompletableFuture<Versioned<LedgerMetadata>> whenComplete;
-    @Mock
-    protected CompletableFuture<Versioned<LedgerMetadata>> whenCompleteCloseOk;
-    @Mock
-    protected CompletableFuture<Versioned<LedgerMetadata>> whenCompleteCloseWrong;
-    @Mock
-    protected CompletableFuture<Void> whenCompleteRemoveOk;
-    @Mock
-    protected CompletableFuture<Void> whenCompleteRemoveWrong;
-    @Mock
-    private Versioned<LedgerMetadata> versioned;
-    @Mock
-    protected LedgerMetadata metadata;
-    @Mock
-    private Void voidDelete;
+    @Mock private BookieClient bookieClient;
+    @Mock private BookieWatcher bookieWatcher;
+    @Mock private LedgerIdGenerator ledgerIdGenerator;
+    @Mock protected LedgerManager ledgerManager;
+    @Mock private CompletableFuture<Versioned<LedgerMetadata>> whenComplete;
+    @Mock protected CompletableFuture<Versioned<LedgerMetadata>> whenCompleteCloseOk;
+    @Mock protected CompletableFuture<Versioned<LedgerMetadata>> whenCompleteCloseWrong;
+    @Mock protected CompletableFuture<Void> whenCompleteRemoveOk;
+    @Mock protected CompletableFuture<Void> whenCompleteRemoveWrong;
+    @Mock private Versioned<LedgerMetadata> versioned;
+    @Mock protected LedgerMetadata metadata;
+    @Mock private Void voidDelete;
     private OrderedExecutor executor;
-    @Spy
-    protected BookKeeper bk;
+
+    @Spy protected BookKeeper bk;
 
     private Map<String, MockedStatic<?>> mockedStatics = new HashMap<>();
 
@@ -116,9 +106,6 @@ public abstract class BookKeeperTest {
                     .withLastEntryId(-1)
                     .withLength(0)
                     .build();
-//            LedgerMetadata meta = LedgerMetadataBuilder.from(metadata)
-//                    .withClosedState().withLastEntryId(-1)
-//                    .withLength(0).build();
             Versioned<LedgerMetadata> versionedMeta = new Versioned<>(meta, Version.ANY);
             when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(whenCompleteCloseOk);
             doAnswer( invocation -> {
@@ -140,6 +127,24 @@ public abstract class BookKeeperTest {
             ((BiConsumer<Void, Throwable>) invocation.getArguments()[0]).accept(voidDelete, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
             return null;
         }).when(whenCompleteRemoveWrong).whenCompleteAsync(any(BiConsumer.class), any());
+
+        /* 1st Iteration: close bookie client */
+        doAnswer(invocationOnMock -> {
+            bk.closeLock.writeLock().lock();
+            try {
+                if (bk.closed) {
+                    return null;
+                }
+                bk.closed = true;
+            } finally {
+                bk.closeLock.writeLock().unlock();
+            }
+
+            // Close bookie client so all pending bookie requests would be failed
+            // which will reject any incoming bookie requests.
+            bookieClient.close();
+            return null;
+        }).when(bk).close();
     }
 
 

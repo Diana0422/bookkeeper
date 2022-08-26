@@ -2,7 +2,6 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.utils.ParamType;
 import org.apache.bookkeeper.utils.ResultType;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,19 +21,29 @@ public class OpenLedgerTest extends BookKeeperTest {
 
     private long ledgerId;
     private ParamType passType;
+    private boolean clientClosed;
 
-    public OpenLedgerTest(long ledgerId, BookKeeper.DigestType digestType, ParamType passwdType, ResultType resultType) {
-        configure(ledgerId, digestType, passwdType, resultType);
+    public OpenLedgerTest(boolean clientClosed, long ledgerId, BookKeeper.DigestType digestType, ParamType passwdType, ResultType resultType) {
+        configure(clientClosed, ledgerId, digestType, passwdType, resultType);
     }
 
-    private void configure(long ledgerId, BookKeeper.DigestType digestType, ParamType passwdType, ResultType resultType) {
-        configureDigestType(digestType);
-        configureOpeningPasswd(passwdType);
-        configureResult(resultType);
+    private void configure(boolean clientClosed, long ledgerId, BookKeeper.DigestType digestType, ParamType passwdType, ResultType resultType) {
+        this.clientClosed = clientClosed;
         this.ledgerId = ledgerId;
         this.ensSize = 1;
         this.writeQuorumSize = 1;
         this.ackQuorumSize = 1;
+        configureDigestType(digestType);
+        configureOpeningPasswd(passwdType);
+        configureResult(resultType);
+    }
+
+    @Override
+    protected void configureResult(ResultType resultType) {
+        super.configureResult(resultType);
+        if (resultType == ResultType.BK_ERR && clientClosed) {
+            this.expectedError = new BKException.BKClientClosedException();
+        }
     }
 
     private void configureOpeningPasswd(ParamType passwdType) {
@@ -64,15 +73,19 @@ public class OpenLedgerTest extends BookKeeperTest {
     @Parameterized.Parameters
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                // {lId, DigestType, passwd, result}
-                {4113L, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.OK},
-                {2001L, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.BK_ERR},
-                {4113L, BookKeeper.DigestType.CRC32, ParamType.CORRECT, ResultType.OK},
-                {4113L, BookKeeper.DigestType.MAC, ParamType.CORRECT, ResultType.OK},
-                {4113L, BookKeeper.DigestType.CRC32C, ParamType.CORRECT, ResultType.OK},
-                {4113L, BookKeeper.DigestType.DUMMY, ParamType.EMPTY, ResultType.OK},
-                {4113L, BookKeeper.DigestType.DUMMY, ParamType.INCORRECT, ResultType.ILLEGAL_ARG_ERR},
+                // {clientClosed, lId, DigestType, passwd, result}
+                /* 1st Iteration: category partition */
+                {false, 4113L, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.OK},
+                {false, 2001L, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.BK_ERR},
+                {false, 4113L, BookKeeper.DigestType.CRC32, ParamType.CORRECT, ResultType.OK},
+                {false, 4113L, BookKeeper.DigestType.MAC, ParamType.CORRECT, ResultType.OK},
+                {false, 4113L, BookKeeper.DigestType.CRC32C, ParamType.CORRECT, ResultType.OK},
+                {false, 4113L, BookKeeper.DigestType.DUMMY, ParamType.EMPTY, ResultType.OK},
+                {false, 4113L, BookKeeper.DigestType.DUMMY, ParamType.INCORRECT, ResultType.ILLEGAL_ARG_ERR},
 //                {-1, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.BK_ERR}
+
+                /* 2nd Iteration: increment statement coverage */
+                {true, 4113L, BookKeeper.DigestType.MAC, ParamType.CORRECT, ResultType.BK_ERR}
         });
     }
 
@@ -90,7 +103,7 @@ public class OpenLedgerTest extends BookKeeperTest {
     }
 
     @Test
-    public void openTest() {
+    public void openTest() throws BKException, InterruptedException {
         LedgerHandle handle = null;
         if (ledgerId == 4113L && passType == ParamType.CORRECT) {
             try {
@@ -101,6 +114,11 @@ public class OpenLedgerTest extends BookKeeperTest {
             } catch (InterruptedException | BKException e) {
                 e.printStackTrace();
             }
+        }
+
+        if (clientClosed) {
+            /* 2nd Iteration: increment statement and condition coverage */
+            bk.close();
         }
 
         if (handle == null){
@@ -118,6 +136,7 @@ public class OpenLedgerTest extends BookKeeperTest {
                 assertNotNull(handle);
             } catch (BKException | InterruptedException e) {
                 e.printStackTrace();
+                assertEquals(expectedError.getClass(), e.getClass());
             }
         }
     }
