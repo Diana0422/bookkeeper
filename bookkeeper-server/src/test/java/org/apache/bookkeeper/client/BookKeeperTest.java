@@ -6,9 +6,7 @@ import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.apache.bookkeeper.util.LocalBookKeeper;
 import org.apache.bookkeeper.utils.ExpectedLedger;
 import org.apache.bookkeeper.utils.ResultType;
 import org.apache.bookkeeper.versioning.Version;
@@ -41,7 +39,7 @@ public abstract class BookKeeperTest {
 
     @Spy protected BookKeeper bk;
 
-    private Map<String, MockedStatic<?>> mockedStatics = new HashMap<>();
+    protected MockedStatic<SyncCallbackUtils> syncCallbackUtils;
 
     protected int ensSize;
     protected int writeQuorumSize;
