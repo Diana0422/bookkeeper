@@ -70,6 +70,8 @@ public class ReadEntriesTest extends BookKeeperAdminTest {
     @Parameterized.Parameters
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
+                // {ledgerId, firstEntry, lastEntry, result, expectedEntries}
+                /* 1st Iteration: category partitioning */
                 {4113L, 0, 0, ResultType.OK, 1},
                 {4113L, 0, -1, ResultType.OK, 3},
                 {4113L, 0, 1, ResultType.OK, 2},
@@ -81,6 +83,15 @@ public class ReadEntriesTest extends BookKeeperAdminTest {
                 {4113L, -1, 0, ResultType.ILLEGAL_ARG_ERR, 0},
                 {-1, 0, 0, ResultType.ILLEGAL_ARG_ERR, 0},
                 {4111L, 0, 0, ResultType.BK_ERR, 0},
+
+                /* 2nd Iteration: increment statement and condition coverage */
+                // no tests added
+
+                /* 2nd Iteration: increment data flow coverage */
+                // no tests added
+
+                /* 3rd Iteration: mutation coverage */
+                {0, 0, -1, ResultType.BK_ERR, 0}
         });
     }
 
@@ -133,7 +144,9 @@ public class ReadEntriesTest extends BookKeeperAdminTest {
         try {
             int countEntries = 0;
             Iterable<LedgerEntry> ledgerEntries = bookKeeperAdmin.readEntries(ledgerId, firstEntry, lastEntry);
-            for (LedgerEntry ledgerEntry : ledgerEntries) {
+            Iterator<LedgerEntry> iterator = ledgerEntries.iterator();
+            while (iterator.hasNext()) {
+                LedgerEntry ledgerEntry = iterator.next();
                 countEntries++;
                 System.out.println(ledgerEntry);
             }
