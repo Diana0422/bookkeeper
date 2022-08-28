@@ -2,6 +2,7 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.utils.ResultType;
 import org.apache.bookkeeper.versioning.Version;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,10 +24,11 @@ public class DeleteLedgerTest extends BookKeeperTest {
 
     private long ledgerId;
     private boolean closedClient;
+    private LedgerHandle ledger;
 
     public DeleteLedgerTest(boolean closedClient, long ledgerId, ResultType resultType) {
         configure(closedClient, ledgerId, resultType);
-    }
+     }
 
     private void configure(boolean closedClient, long ledgerId, ResultType resultType) {
         this.closedClient = closedClient;
@@ -45,6 +47,8 @@ public class DeleteLedgerTest extends BookKeeperTest {
         super.configureResult(resultType);
         if (resultType == ResultType.BK_ERR && closedClient) {
             this.expectedError = new BKException.BKClientClosedException();
+        } else if (resultType == ResultType.OK) {
+            this.expectedError = new BKException.BKLedgerClosedException();
         }
     }
 
@@ -59,13 +63,12 @@ public class DeleteLedgerTest extends BookKeeperTest {
 
     @Test
     public void deleteTest() throws BKException, InterruptedException {
-        LedgerHandle handle = null;
         if (ledgerId == 4113L) {
             try {
-                handle = bk.createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd);
-                handle.close();
-                assertTrue(handle.isClosed());
-                assertEquals(ledgerId, handle.getId());
+                ledger = bk.createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd);
+                ledger.close();
+                assertTrue(ledger.isClosed());
+                assertEquals(ledgerId, ledger.getId());
             } catch (InterruptedException | BKException e) {
                 e.printStackTrace();
             }
@@ -76,17 +79,21 @@ public class DeleteLedgerTest extends BookKeeperTest {
             bk.close();
         }
 
-        if (handle != null) {
+        if (ledger != null) {
             // ledger exists
             Logger.getGlobal().log(Level.WARNING, "ledger exists");
             try {
                 bk.deleteLedger(ledgerId);
+                // if ledger deleted is not possible to add new entries:
+                // this should throw exception
+                ledger.addEntry("entry data".getBytes(StandardCharsets.UTF_8));
             } catch (Exception e) {
                 e.printStackTrace();
                 assertEquals(expectedError.getClass(), e.getClass());
             }
+            // if ledger deleted is not possible to add new entries
         } else {
-            // ledger not exists
+            // ledger not exists: expected exception only
             Logger.getGlobal().log(Level.WARNING, "ledger not exists");
             try {
                 bk.deleteLedger(ledgerId);

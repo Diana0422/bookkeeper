@@ -2,6 +2,7 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.utils.ParamType;
 import org.apache.bookkeeper.utils.ResultType;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,6 +22,7 @@ public class OpenLedgerTest extends BookKeeperTest {
 
     private long ledgerId;
     private ParamType passType;
+    private LedgerHandle ledger;
     private boolean clientClosed;
 
     public OpenLedgerTest(boolean clientClosed, long ledgerId, BookKeeper.DigestType digestType, ParamType passwdType, ResultType resultType) {
@@ -104,13 +106,12 @@ public class OpenLedgerTest extends BookKeeperTest {
 
     @Test
     public void openTest() throws BKException, InterruptedException {
-        LedgerHandle handle = null;
         if (ledgerId == 4113L && passType == ParamType.CORRECT) {
             try {
-                handle = bk.createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd);
-                handle.close();
-                assertTrue(handle.isClosed());
-                if (handle.isClosed()) Logger.getGlobal().log(Level.WARNING, "ledger closed.");
+                ledger = bk.createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd);
+                ledger.close();
+                assertTrue(ledger.isClosed());
+                if (ledger.isClosed()) Logger.getGlobal().log(Level.WARNING, "ledger closed.");
             } catch (InterruptedException | BKException e) {
                 e.printStackTrace();
             }
@@ -121,22 +122,35 @@ public class OpenLedgerTest extends BookKeeperTest {
             bk.close();
         }
 
-        if (handle == null){
+        if (ledger == null){
             // ledger does not exists
             try {
-                handle = bk.openLedger(ledgerId, digestType, passwd);
-                assertNotNull(handle);
+                ledger = bk.openLedger(ledgerId, digestType, passwd);
+                assertNotNull(ledger);
             }catch (BKException | InterruptedException e){
                 assertEquals(expectedError.getClass(), e.getClass());
             }
         } else {
             // ledger exists and was previously closed
             try {
-                handle = bk.openLedger(ledgerId, digestType, passwd);
-                assertNotNull(handle);
+                ledger = bk.openLedger(ledgerId, digestType, passwd);
+                assertNotNull(ledger);
+                assertEquals(expected.getLedgerId(), ledger.ledgerId);
             } catch (BKException | InterruptedException e) {
                 e.printStackTrace();
                 assertEquals(expectedError.getClass(), e.getClass());
+            }
+        }
+    }
+
+    @After
+    public void closeLedger() {
+        if (!clientClosed) {
+            try {
+                if (ledger != null) ledger.close(); //close properly
+            } catch (Exception e) {
+                e.printStackTrace();
+                Logger.getGlobal().log(Level.WARNING, "ledger not properly closed");
             }
         }
     }
