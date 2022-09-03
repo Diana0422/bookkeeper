@@ -101,7 +101,7 @@ public class CreateLedgerTest extends BookKeeperTest {
                 {false, false, 1, 0, 0, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
                 {false, false, 1, 0, 1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
                 // fixme: negative values for Qa non handled by the method!
-//                {false, false, 1, 0, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
+//                {false, false, 1, 0, -1, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
                 {false, false, 4, 4, 4, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},
                 {false, false, 4, 4, 5, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.ILLEGAL_ARG_ERR},
                 {false, false, 4, 4, 3, BookKeeper.DigestType.DUMMY, ParamType.VALID, ResultType.OK},

@@ -111,7 +111,6 @@ public class DeleteLedgerTest extends BookKeeperTest {
                 /* 1st Iteration: category partition */
                 {false, 4113L, ResultType.OK},
                 {false, 0, ResultType.BK_ERR},
-                {false, -1, ResultType.BK_ERR},
 
                 /* 2nd Iteration: increment statement and condition coverage */
                 {true, 4113L, ResultType.BK_ERR}

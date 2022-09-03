@@ -84,7 +84,6 @@ public class OpenLedgerTest extends BookKeeperTest {
                 {false, 4113L, BookKeeper.DigestType.CRC32C, ParamType.CORRECT, ResultType.OK},
                 {false, 4113L, BookKeeper.DigestType.DUMMY, ParamType.EMPTY, ResultType.OK},
                 {false, 4113L, BookKeeper.DigestType.DUMMY, ParamType.INCORRECT, ResultType.ILLEGAL_ARG_ERR},
-//                {-1, BookKeeper.DigestType.DUMMY, ParamType.CORRECT, ResultType.BK_ERR}
 
                 /* 2nd Iteration: increment statement coverage */
                 {true, 4113L, BookKeeper.DigestType.MAC, ParamType.CORRECT, ResultType.BK_ERR}
