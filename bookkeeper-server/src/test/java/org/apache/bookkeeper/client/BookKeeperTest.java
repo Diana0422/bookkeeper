@@ -59,7 +59,8 @@ public abstract class BookKeeperTest {
     public void setUp() throws Exception {
         System.out.println("Expected:" + expected);
         doAnswer(invocation -> {
-            ((BookkeeperInternalCallbacks.GenericCallback<Long>) invocation.getArguments()[0]).operationComplete(BKException.Code.OK, new Long(4113));
+            ((BookkeeperInternalCallbacks.GenericCallback<Long>) invocation.getArguments()[0])
+                    .operationComplete(BKException.Code.OK, new Long(4113));
             return null;
         }).when(ledgerIdGenerator).generateLedgerId(any(BookkeeperInternalCallbacks.GenericCallback.class));
 
@@ -107,11 +108,13 @@ public abstract class BookKeeperTest {
             Versioned<LedgerMetadata> versionedMeta = new Versioned<>(meta, Version.ANY);
             when(ledgerManager.writeLedgerMetadata(anyLong(), any(), any())).thenReturn(whenCompleteCloseOk);
             doAnswer( invocation -> {
-                ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, null);
+                ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0])
+                        .accept(versionedMeta, null);
                 return null;
             }).when(whenCompleteCloseOk).whenComplete(any(BiConsumer.class));
             doAnswer( invocation -> {
-                ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0]).accept(versionedMeta, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
+                ((BiConsumer<Versioned<LedgerMetadata>, Throwable>) invocation.getArguments()[0])
+                        .accept(versionedMeta, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
                 return null;
             }).when(whenCompleteCloseWrong).whenComplete(any(BiConsumer.class));
         }
@@ -122,7 +125,8 @@ public abstract class BookKeeperTest {
             return null;
         }).when(whenCompleteRemoveOk).whenCompleteAsync(any(BiConsumer.class), any());
         doAnswer( invocation -> {
-            ((BiConsumer<Void, Throwable>) invocation.getArguments()[0]).accept(voidDelete, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
+            ((BiConsumer<Void, Throwable>) invocation.getArguments()[0])
+                    .accept(voidDelete, new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
             return null;
         }).when(whenCompleteRemoveWrong).whenCompleteAsync(any(BiConsumer.class), any());
 
